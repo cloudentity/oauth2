@@ -1,4 +1,4 @@
-package privatekeyjwt
+package advancedauth
 
 import (
 	"crypto/rsa"
@@ -13,13 +13,7 @@ import (
 
 const PrivateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
-type AssertionConfig struct {
-	ClientID   string
-	PrivateKey string
-	TokenURL   string
-}
-
-func JWTAssertionVals(c AssertionConfig) (url.Values, error) {
+func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 	var (
 		key       *rsa.PrivateKey
 		err       error

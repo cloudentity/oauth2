@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/cloudentity/oauth2"
+	"github.com/cloudentity/oauth2/advancedauth"
 	"github.com/cloudentity/oauth2/internal"
-	"github.com/cloudentity/oauth2/privatekeyjwt"
 )
 
 // Config describes a 2-legged OAuth2 flow, with both the
@@ -99,20 +99,16 @@ func (c *tokenSource) Token() (*oauth2.Token, error) {
 	if len(c.conf.Scopes) > 0 {
 		v.Set("scope", strings.Join(c.conf.Scopes, " "))
 	}
-	if c.conf.AuthStyle == oauth2.AuthStylePrivateKeyJWT {
+	// not client_secret nor auto_detect
+	if c.conf.AuthStyle > 2 {
 		var err error
-		jwtVals, err := privatekeyjwt.JWTAssertionVals(privatekeyjwt.AssertionConfig{
+		if v, err = advancedauth.UrlValuesFromConfig(v, advancedauth.Config{
+			AuthStyle:  c.conf.AuthStyle,
 			ClientID:   c.conf.ClientID,
 			PrivateKey: c.conf.PrivateKey,
 			TokenURL:   c.conf.TokenURL,
-		})
-		if err != nil {
+		}); err != nil {
 			return nil, err
-		}
-		for key, vals := range jwtVals {
-			for _, val := range vals {
-				v.Set(key, val)
-			}
 		}
 	}
 	for k, p := range c.conf.EndpointParams {

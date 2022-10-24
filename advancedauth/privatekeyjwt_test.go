@@ -1,4 +1,4 @@
-package privatekeyjwt_test
+package advancedauth_test
 
 import (
 	"context"
