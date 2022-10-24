@@ -41,7 +41,7 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 		KeyID:     "", // TODO fetch from config?
 	}
 
-	if key, err = internal.ParseKey([]byte(c.PrivateKey)); err != nil {
+	if key, err = internal.ParseKey([]byte(c.PrivateKeyAuth.Key)); err != nil {
 		return url.Values{}, err
 	}
 

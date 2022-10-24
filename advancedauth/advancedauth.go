@@ -2,15 +2,23 @@ package advancedauth
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/cloudentity/oauth2"
 )
 
+type PrivateKeyAuth struct {
+	Key   string
+	KeyID string
+	Alg   string
+	Exp   time.Duration
+}
+
 type Config struct {
-	AuthStyle  oauth2.AuthStyle
-	ClientID   string
-	PrivateKey string
-	TokenURL   string
+	AuthStyle      oauth2.AuthStyle
+	ClientID       string
+	PrivateKeyAuth PrivateKeyAuth
+	TokenURL       string
 }
 
 func UrlValuesFromConfig(v url.Values, c Config) (url.Values, error) {

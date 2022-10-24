@@ -49,9 +49,9 @@ type Config struct {
 	// auto-detect.
 	AuthStyle oauth2.AuthStyle
 
-	// PrivateKey contains the contents of the application's PEM-encoded private key
-	// Used with private_key_jwt client authentication
-	PrivateKey string
+	// PrivateKeyAuth stores configuration options for private_key_jwt
+	// client authentication method described in OpenID Connect spec.
+	PrivateKeyAuth advancedauth.PrivateKeyAuth
 }
 
 // Token uses client credentials to retrieve a token.
@@ -103,10 +103,10 @@ func (c *tokenSource) Token() (*oauth2.Token, error) {
 	if c.conf.AuthStyle > 2 {
 		var err error
 		if v, err = advancedauth.UrlValuesFromConfig(v, advancedauth.Config{
-			AuthStyle:  c.conf.AuthStyle,
-			ClientID:   c.conf.ClientID,
-			PrivateKey: c.conf.PrivateKey,
-			TokenURL:   c.conf.TokenURL,
+			AuthStyle:      c.conf.AuthStyle,
+			ClientID:       c.conf.ClientID,
+			PrivateKeyAuth: c.conf.PrivateKeyAuth,
+			TokenURL:       c.conf.TokenURL,
 		}); err != nil {
 			return nil, err
 		}

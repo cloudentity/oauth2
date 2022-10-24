@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cloudentity/oauth2"
+	"github.com/cloudentity/oauth2/advancedauth"
 	"github.com/cloudentity/oauth2/clientcredentials"
 	"github.com/cloudentity/oauth2/internal"
 	"github.com/cloudentity/oauth2/jws"
@@ -43,9 +44,11 @@ QpOfbf+wx3/57uuDQQIDAQAB
 
 func privateKeyJwtConf(serverURL string) *clientcredentials.Config {
 	return &clientcredentials.Config{
-		ClientID:       "CLIENT_ID",
-		AuthStyle:      oauth2.AuthStylePrivateKeyJWT,
-		PrivateKey:     privateKey,
+		ClientID:  "CLIENT_ID",
+		AuthStyle: oauth2.AuthStylePrivateKeyJWT,
+		PrivateKeyAuth: advancedauth.PrivateKeyAuth{
+			Key: privateKey,
+		},
 		Scopes:         []string{"scope1", "scope2"},
 		TokenURL:       serverURL + "/token",
 		EndpointParams: url.Values{"audience": {"audience1"}},
