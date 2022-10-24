@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const PrivateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+const privateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
 func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 	var (
@@ -51,6 +51,6 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 
 	return url.Values{
 		"client_assertion":      []string{assertion},
-		"client_assertion_type": []string{PrivateKeyJWTAssertionType},
+		"client_assertion_type": []string{privateKeyJWTAssertionType},
 	}, nil
 }
