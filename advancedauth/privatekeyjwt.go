@@ -1,12 +1,10 @@
 package advancedauth
 
 import (
-	"crypto/rsa"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/cloudentity/oauth2/internal"
 	"github.com/cloudentity/oauth2/jws"
 	"github.com/google/uuid"
 )
@@ -15,7 +13,6 @@ const privateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:
 
 func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 	var (
-		key       *rsa.PrivateKey
 		err       error
 		assertion string
 		id        uuid.UUID
@@ -36,16 +33,12 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 	}
 
 	header := &jws.Header{
-		Algorithm: "RS256", // TODO configurable ??
+		Algorithm: c.PrivateKeyAuth.Alg,
 		Typ:       "JWT",
-		KeyID:     "", // TODO fetch from config?
+		KeyID:     c.PrivateKeyAuth.KeyID,
 	}
 
-	if key, err = internal.ParseKey([]byte(c.PrivateKeyAuth.Key)); err != nil {
-		return url.Values{}, err
-	}
-
-	if assertion, err = jws.Encode(header, claims, key); err != nil {
+	if assertion, err = encode(header, c.PrivateKeyAuth.Key, claims); err != nil {
 		return url.Values{}, err
 	}
 

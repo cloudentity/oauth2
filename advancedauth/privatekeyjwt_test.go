@@ -62,7 +62,7 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 		serverURL string
 	)
 
-	if pubKey, err = internal.ParsePublicKey([]byte(publicKey)); err != nil {
+	if pubKey, err = advancedauth.ParsePublicRSAKey([]byte(publicKey)); err != nil {
 		t.Error("could not parse key")
 	}
 
