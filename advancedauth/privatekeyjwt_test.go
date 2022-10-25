@@ -2,7 +2,6 @@ package advancedauth_test
 
 import (
 	"context"
-	"crypto/rsa"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,7 +11,6 @@ import (
 	"github.com/cloudentity/oauth2"
 	"github.com/cloudentity/oauth2/advancedauth"
 	"github.com/cloudentity/oauth2/clientcredentials"
-	"github.com/cloudentity/oauth2/internal"
 	"github.com/cloudentity/oauth2/jws"
 	utils "github.com/cloudentity/oauth2/testutils"
 )
@@ -40,72 +38,101 @@ LikJgGQaScg5S9XS3INwYz+EZtXrg6++HKyHjqEUeKT+2IZHSJPhOHdKaxh7KCci
 31MXHtWSG8xMaikKWyLPXjmUkqONQHOD7XvECqQ8KGkrZ5BTIkVa7KA6aXlYoc3z
 QpOfbf+wx3/57uuDQQIDAQAB
 -----END PUBLIC KEY-----`
+
+	privateECDSAKey = `-----BEGIN EC PRIVATE KEY-----
+MHgCAQEEIQCc6xCaaNyBp2ULknKhpMnvsTfyok5l7VOy7yu8vX5qvKAKBggqhkjO
+PQMBB6FEA0IABCI5HIS9PAck6m2w50a9CKPqdoGwIAa2acPB9CkAOb5GIXS69Yh8
+kDhNJ1rNy4lUZ8usYgLv+HUIOGFYBFJ10q0=
+-----END EC PRIVATE KEY-----`
+
+	publicECDSAKey = `ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCI5HIS9PAck6m2w50a9CKPqdoGwIAa2acPB9CkAOb5GIXS69Yh8kDhNJ1rNy4lUZ8usYgLv+HUIOGFYBFJ10q0=`
 )
 
-func privateKeyJwtConf(serverURL string) *clientcredentials.Config {
-	return &clientcredentials.Config{
-		ClientID:  "CLIENT_ID",
-		AuthStyle: oauth2.AuthStylePrivateKeyJWT,
-		PrivateKeyAuth: advancedauth.PrivateKeyAuth{
-			Key: privateKey,
-		},
-		Scopes:         []string{"scope1", "scope2"},
-		TokenURL:       serverURL + "/token",
-		EndpointParams: url.Values{"audience": {"audience1"}},
-	}
-}
-
 func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
-	var (
-		pubKey    *rsa.PublicKey
-		err       error
-		serverURL string
-	)
-
-	if pubKey, err = advancedauth.ParsePublicRSAKey([]byte(publicKey)); err != nil {
-		t.Error("could not parse key")
+	tcs := []struct {
+		title     string
+		config    clientcredentials.Config
+		publicKey string
+	}{
+		{
+			title: "RSA",
+			config: clientcredentials.Config{
+				ClientID:  "CLIENT_ID",
+				AuthStyle: oauth2.AuthStylePrivateKeyJWT,
+				PrivateKeyAuth: advancedauth.PrivateKeyAuth{
+					Key: privateKey,
+					Alg: "RS256",
+				},
+				Scopes:         []string{"scope1", "scope2"},
+				EndpointParams: url.Values{"audience": {"audience1"}},
+			},
+			publicKey: publicKey,
+		},
+		{
+			title: "ECDSA",
+			config: clientcredentials.Config{
+				ClientID:  "CLIENT_ID",
+				AuthStyle: oauth2.AuthStylePrivateKeyJWT,
+				PrivateKeyAuth: advancedauth.PrivateKeyAuth{
+					Key: privateECDSAKey,
+					Alg: "ES512",
+				},
+				Scopes:         []string{"scope1", "scope2"},
+				EndpointParams: url.Values{"audience": {"audience1"}},
+			},
+			publicKey: publicECDSAKey,
+		},
 	}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		utils.ExpectURL(t, r, "/token")
-		utils.ExpectHeader(t, r, "Authorization", "")
-		utils.ExpectHeader(t, r, "Content-Type", "application/x-www-form-urlencoded")
-		utils.ExpectFormParam(t, r, "client_id", "")
-		utils.ExpectFormParam(t, r, "client_secret", "")
-		utils.ExpectFormParam(t, r, "grant_type", "client_credentials")
-		utils.ExpectFormParam(t, r, "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+	for _, tc := range tcs {
+		tc := tc
+		t.Run(tc.title, func(tt *testing.T) {
+			var serverURL string
 
-		assertion := r.FormValue("client_assertion")
-		if err := jws.Verify(assertion, pubKey); err != nil {
-			t.Error("invalid JWT signature")
-		}
-		claims, err := jws.Decode(assertion)
-		if err != nil {
-			t.Error("could not decode JWT claims")
-		}
-		utils.RequireStringsEqual(t, "CLIENT_ID", claims.Iss)
-		utils.RequireStringsEqual(t, "CLIENT_ID", claims.Sub)
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				utils.ExpectURL(tt, r, "/token")
+				utils.ExpectHeader(tt, r, "Authorization", "")
+				utils.ExpectHeader(tt, r, "Content-Type", "application/x-www-form-urlencoded")
+				utils.ExpectFormParam(tt, r, "client_id", "")
+				utils.ExpectFormParam(tt, r, "client_secret", "")
+				utils.ExpectFormParam(tt, r, "grant_type", "client_credentials")
+				utils.ExpectFormParam(tt, r, "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
 
-		// uuid v4 like
-		utils.RequireTrue(t, len(claims.Jti) == 36)
+				assertion := r.FormValue("client_assertion")
+				if err := advancedauth.Verify(assertion, tc.publicKey); err != nil {
+					tt.Error("invalid JWT signature")
+				}
+				claims, err := jws.Decode(assertion)
+				if err != nil {
+					tt.Error("could not decode JWT claims")
+				}
+				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Iss)
+				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Sub)
 
-		utils.RequireTrue(t, time.Now().Unix() < claims.Exp)
-		utils.RequireStringsEqual(t, serverURL, claims.Aud)
+				// uuid v4 like
+				utils.RequireTrue(tt, len(claims.Jti) == 36)
 
-		w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-		w.Write([]byte("access_token=90d64460d14870c08c81352a05dedd3465940a7c&token_type=bearer"))
-	}))
-	serverURL = ts.URL
-	defer ts.Close()
-	conf := privateKeyJwtConf(serverURL)
-	tok, err := conf.Token(context.Background())
-	if err != nil {
-		t.Error(err)
+				utils.RequireTrue(tt, time.Now().Unix() < claims.Exp)
+				utils.RequireStringsEqual(tt, serverURL, claims.Aud)
+
+				w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
+				w.Write([]byte("access_token=90d64460d14870c08c81352a05dedd3465940a7c&token_type=bearer"))
+			}))
+			serverURL = ts.URL
+			defer ts.Close()
+			conf := &tc.config
+			conf.TokenURL = serverURL + "/token"
+			tok, err := conf.Token(context.Background())
+			if err != nil {
+				tt.Error(err)
+			}
+			utils.ExpectAccessToken(t, &oauth2.Token{
+				AccessToken:  "90d64460d14870c08c81352a05dedd3465940a7c",
+				TokenType:    "bearer",
+				RefreshToken: "",
+				Expiry:       time.Time{},
+			}, tok)
+		})
 	}
-	utils.ExpectAccessToken(t, &oauth2.Token{
-		AccessToken:  "90d64460d14870c08c81352a05dedd3465940a7c",
-		TokenType:    "bearer",
-		RefreshToken: "",
-		Expiry:       time.Time{},
-	}, tok)
+
 }
