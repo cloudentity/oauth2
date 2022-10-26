@@ -131,7 +131,10 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 				utils.RequireStringsEqual(tt, serverURL, claims.Audience[0])
 
 				w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
-				w.Write([]byte("access_token=90d64460d14870c08c81352a05dedd3465940a7c&token_type=bearer"))
+				_, err = w.Write([]byte("access_token=90d64460d14870c08c81352a05dedd3465940a7c&token_type=bearer"))
+				if err != nil {
+					tt.Errorf("could not write body")
+				}
 			}))
 			serverURL = ts.URL
 			defer ts.Close()
