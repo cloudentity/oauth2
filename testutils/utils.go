@@ -38,7 +38,7 @@ func ExpectBody(t *testing.T, r *http.Request, expected string) {
 
 func ExpectAccessToken(t *testing.T, expected *oauth2.Token, actual *oauth2.Token) {
 	if !actual.Valid() {
-		t.Fatalf("token invalid. got: %#v", actual)
+		t.Fatalf("token invalid. got: %+v", actual)
 	}
 	if actual.AccessToken != expected.AccessToken {
 		t.Errorf("Access token = %q; want %q", actual.AccessToken, expected.AccessToken)

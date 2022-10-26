@@ -11,8 +11,8 @@ import (
 	"github.com/cloudentity/oauth2"
 	"github.com/cloudentity/oauth2/advancedauth"
 	"github.com/cloudentity/oauth2/clientcredentials"
-	"github.com/cloudentity/oauth2/jws"
 	utils "github.com/cloudentity/oauth2/testutils"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 const (
@@ -40,19 +40,30 @@ QpOfbf+wx3/57uuDQQIDAQAB
 -----END PUBLIC KEY-----`
 
 	privateECDSAKey = `-----BEGIN EC PRIVATE KEY-----
-MHgCAQEEIQCc6xCaaNyBp2ULknKhpMnvsTfyok5l7VOy7yu8vX5qvKAKBggqhkjO
-PQMBB6FEA0IABCI5HIS9PAck6m2w50a9CKPqdoGwIAa2acPB9CkAOb5GIXS69Yh8
-kDhNJ1rNy4lUZ8usYgLv+HUIOGFYBFJ10q0=
+MHcCAQEEIMlmB8ys8+Sp4b0zSzghVD9q9GtljXTwI58f6sGJoFRQoAoGCCqGSM49
+AwEHoUQDQgAEO1sWioJjxNghnKRcH1eHMCTreC2FvVWVDgE2dqe84TeXtbkAUosr
+9EdTaTI96qG8xnCEKg3QLnCRuJj54SqpSQ==
 -----END EC PRIVATE KEY-----`
 
-	publicECDSAKey = `ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBCI5HIS9PAck6m2w50a9CKPqdoGwIAa2acPB9CkAOb5GIXS69Yh8kDhNJ1rNy4lUZ8usYgLv+HUIOGFYBFJ10q0=`
+	publicECDSAKey = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEO1sWioJjxNghnKRcH1eHMCTreC2F
+vVWVDgE2dqe84TeXtbkAUosr9EdTaTI96qG8xnCEKg3QLnCRuJj54SqpSQ==
+-----END PUBLIC KEY-----`
 )
 
 func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
+	rsaPubKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(publicKey))
+	if err != nil {
+		t.Error("could not parse rsa public key")
+	}
+	ecdsaPubKey, err := jwt.ParseECPublicKeyFromPEM([]byte(publicECDSAKey))
+	if err != nil {
+		t.Error("could not parse ecdsa public key")
+	}
 	tcs := []struct {
 		title     string
 		config    clientcredentials.Config
-		publicKey string
+		publicKey interface{}
 	}{
 		{
 			title: "RSA",
@@ -66,7 +77,7 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 				Scopes:         []string{"scope1", "scope2"},
 				EndpointParams: url.Values{"audience": {"audience1"}},
 			},
-			publicKey: publicKey,
+			publicKey: rsaPubKey,
 		},
 		{
 			title: "ECDSA",
@@ -75,12 +86,12 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 				AuthStyle: oauth2.AuthStylePrivateKeyJWT,
 				PrivateKeyAuth: advancedauth.PrivateKeyAuth{
 					Key: privateECDSAKey,
-					Alg: "ES512",
+					Alg: "ES256",
 				},
 				Scopes:         []string{"scope1", "scope2"},
 				EndpointParams: url.Values{"audience": {"audience1"}},
 			},
-			publicKey: publicECDSAKey,
+			publicKey: ecdsaPubKey,
 		},
 	}
 
@@ -99,34 +110,38 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 				utils.ExpectFormParam(tt, r, "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
 
 				assertion := r.FormValue("client_assertion")
-				if err := advancedauth.Verify(assertion, tc.publicKey); err != nil {
-					tt.Error("invalid JWT signature")
-				}
-				claims, err := jws.Decode(assertion)
+				claims := jwt.RegisteredClaims{}
+				token, err := jwt.ParseWithClaims(assertion, &claims, func(token *jwt.Token) (interface{}, error) {
+					return tc.publicKey, nil
+				})
 				if err != nil {
-					tt.Error("could not decode JWT claims")
+					tt.Errorf("could not parse assertion %+v", err)
 				}
-				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Iss)
-				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Sub)
+				if !token.Valid {
+					tt.Error("invalid assertion token")
+				}
+
+				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Issuer)
+				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Subject)
 
 				// uuid v4 like
-				utils.RequireTrue(tt, len(claims.Jti) == 36)
+				utils.RequireTrue(tt, len(claims.ID) == 36)
 
-				utils.RequireTrue(tt, time.Now().Unix() < claims.Exp)
-				utils.RequireStringsEqual(tt, serverURL, claims.Aud)
+				utils.RequireTrue(tt, time.Now().Unix() < claims.ExpiresAt.Unix())
+				utils.RequireStringsEqual(tt, serverURL, claims.Audience[0])
 
 				w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
 				w.Write([]byte("access_token=90d64460d14870c08c81352a05dedd3465940a7c&token_type=bearer"))
 			}))
 			serverURL = ts.URL
 			defer ts.Close()
-			conf := &tc.config
+			conf := tc.config
 			conf.TokenURL = serverURL + "/token"
 			tok, err := conf.Token(context.Background())
 			if err != nil {
 				tt.Error(err)
 			}
-			utils.ExpectAccessToken(t, &oauth2.Token{
+			utils.ExpectAccessToken(tt, &oauth2.Token{
 				AccessToken:  "90d64460d14870c08c81352a05dedd3465940a7c",
 				TokenType:    "bearer",
 				RefreshToken: "",
