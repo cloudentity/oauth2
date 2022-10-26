@@ -7,10 +7,22 @@ import (
 	"github.com/cloudentity/oauth2"
 )
 
+type Algorithm string
+
+const (
+	RS256 Algorithm = "RS256"
+	RS384 Algorithm = "RS384"
+	RS512 Algorithm = "RS512"
+
+	ES256 Algorithm = "ES256"
+	ES384 Algorithm = "ES384"
+	ES512 Algorithm = "ES512"
+)
+
 type PrivateKeyAuth struct {
 	Key   string
 	KeyID string
-	Alg   string
+	Alg   Algorithm
 	Exp   time.Duration
 }
 

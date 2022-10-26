@@ -55,19 +55,19 @@ func expectFormParam(t *testing.T, r *http.Request, param string, expected strin
 	}
 }
 
-func requireStringsEqual(t *testing.T, expected string, actual string) {
+func expectStringsEqual(t *testing.T, expected string, actual string) {
 	if actual != expected {
 		t.Errorf("Expected %s and %s to be equal", expected, actual)
 	}
 }
 
-func requireStringNonEmpty(t *testing.T, actual string) {
+func expectStringNonEmpty(t *testing.T, actual string) {
 	if actual == "" {
 		t.Errorf("Expected not empty %s", actual)
 	}
 }
 
-func requireTrue(t *testing.T, actual bool) {
+func expectTrue(t *testing.T, actual bool) {
 	if !actual {
 		t.Errorf("Expected true %t", actual)
 	}

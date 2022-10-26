@@ -20,7 +20,7 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 		key       interface{}
 		token     *jwt.Token
 		exp       time.Duration
-		alg       string
+		alg       Algorithm
 	)
 
 	if id, err = uuid.NewUUID(); err != nil {
@@ -43,16 +43,16 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 
 	alg = c.PrivateKeyAuth.Alg
 	if alg == "" {
-		alg = "RS256"
+		alg = RS256
 	}
 
 	switch alg {
-	case "RS256", "RS384", "RS512":
+	case RS256, RS384, RS512:
 		key, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key))
 		if err != nil {
 			return url.Values{}, fmt.Errorf("could not parse private key from PEM %s", alg)
 		}
-	case "ES256", "ES384", "ES512":
+	case ES256, ES384, ES512:
 		key, err = jwt.ParseECPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key))
 		if err != nil {
 
@@ -62,7 +62,7 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 		return url.Values{}, fmt.Errorf("unsupported algorithm %s", alg)
 	}
 
-	token = jwt.NewWithClaims(jwt.GetSigningMethod(alg), claims)
+	token = jwt.NewWithClaims(jwt.GetSigningMethod(string(alg)), claims)
 
 	assertion, err = token.SignedString(key)
 	if err != nil {

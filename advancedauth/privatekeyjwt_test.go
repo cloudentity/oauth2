@@ -119,14 +119,14 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 					tt.Error("invalid assertion token")
 				}
 
-				requireStringsEqual(tt, "CLIENT_ID", claims.Issuer)
-				requireStringsEqual(tt, "CLIENT_ID", claims.Subject)
+				expectStringsEqual(tt, "CLIENT_ID", claims.Issuer)
+				expectStringsEqual(tt, "CLIENT_ID", claims.Subject)
 
 				// uuid v4 like
-				requireTrue(tt, len(claims.ID) == 36)
+				expectTrue(tt, len(claims.ID) == 36)
 
-				requireTrue(tt, time.Now().Unix() < claims.ExpiresAt.Unix())
-				requireStringsEqual(tt, serverURL, claims.Audience[0])
+				expectTrue(tt, time.Now().Unix() < claims.ExpiresAt.Unix())
+				expectStringsEqual(tt, serverURL, claims.Audience[0])
 
 				w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
 				_, err = w.Write([]byte("access_token=90d64460d14870c08c81352a05dedd3465940a7c&token_type=bearer"))
