@@ -19,6 +19,8 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 		id        uuid.UUID
 		key       interface{}
 		token     *jwt.Token
+		exp       time.Duration
+		alg       string
 	)
 
 	if id, err = uuid.NewUUID(); err != nil {
@@ -26,31 +28,41 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 	}
 	jti := id.String()
 
+	exp = c.PrivateKeyAuth.Exp
+	if exp == 0*time.Second {
+		exp = 30 * time.Second
+	}
+
 	claims := &jwt.RegisteredClaims{
 		Issuer:    c.ClientID,
 		Subject:   c.ClientID,
 		Audience:  []string{strings.TrimSuffix(c.TokenURL, "/token")},
 		ID:        jti,
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Second)), // TODO configurable?
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(exp)),
 	}
 
-	switch c.PrivateKeyAuth.Alg {
+	alg = c.PrivateKeyAuth.Alg
+	if alg == "" {
+		alg = "RS256"
+	}
+
+	switch alg {
 	case "RS256", "RS384", "RS512":
 		key, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key))
 		if err != nil {
-			return url.Values{}, fmt.Errorf("could not parse private key from PEM %s", c.PrivateKeyAuth.Alg)
+			return url.Values{}, fmt.Errorf("could not parse private key from PEM %s", alg)
 		}
 	case "ES256", "ES384", "ES512":
 		key, err = jwt.ParseECPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key))
 		if err != nil {
 
-			return url.Values{}, fmt.Errorf("could not parse private key from PEM %s", c.PrivateKeyAuth.Alg)
+			return url.Values{}, fmt.Errorf("could not parse private key from PEM %s", alg)
 		}
 	default:
-		return url.Values{}, fmt.Errorf("unsupported algorithm %s", c.PrivateKeyAuth.Alg)
+		return url.Values{}, fmt.Errorf("unsupported algorithm %s", alg)
 	}
 
-	token = jwt.NewWithClaims(jwt.GetSigningMethod(c.PrivateKeyAuth.Alg), claims)
+	token = jwt.NewWithClaims(jwt.GetSigningMethod(alg), claims)
 
 	assertion, err = token.SignedString(key)
 	if err != nil {

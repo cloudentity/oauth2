@@ -71,7 +71,6 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 				AuthStyle: oauth2.AuthStylePrivateKeyJWT,
 				PrivateKeyAuth: advancedauth.PrivateKeyAuth{
 					Key: privateKey,
-					Alg: "RS256",
 				},
 				Scopes:         []string{"scope1", "scope2"},
 				EndpointParams: url.Values{"audience": {"audience1"}},
