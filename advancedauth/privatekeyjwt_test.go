@@ -11,7 +11,6 @@ import (
 	"github.com/cloudentity/oauth2"
 	"github.com/cloudentity/oauth2/advancedauth"
 	"github.com/cloudentity/oauth2/clientcredentials"
-	utils "github.com/cloudentity/oauth2/testutils"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -101,13 +100,13 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 			var serverURL string
 
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				utils.ExpectURL(tt, r, "/token")
-				utils.ExpectHeader(tt, r, "Authorization", "")
-				utils.ExpectHeader(tt, r, "Content-Type", "application/x-www-form-urlencoded")
-				utils.ExpectFormParam(tt, r, "client_id", "")
-				utils.ExpectFormParam(tt, r, "client_secret", "")
-				utils.ExpectFormParam(tt, r, "grant_type", "client_credentials")
-				utils.ExpectFormParam(tt, r, "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+				expectURL(tt, r, "/token")
+				expectHeader(tt, r, "Authorization", "")
+				expectHeader(tt, r, "Content-Type", "application/x-www-form-urlencoded")
+				expectFormParam(tt, r, "client_id", "")
+				expectFormParam(tt, r, "client_secret", "")
+				expectFormParam(tt, r, "grant_type", "client_credentials")
+				expectFormParam(tt, r, "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
 
 				assertion := r.FormValue("client_assertion")
 				claims := jwt.RegisteredClaims{}
@@ -121,14 +120,14 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 					tt.Error("invalid assertion token")
 				}
 
-				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Issuer)
-				utils.RequireStringsEqual(tt, "CLIENT_ID", claims.Subject)
+				requireStringsEqual(tt, "CLIENT_ID", claims.Issuer)
+				requireStringsEqual(tt, "CLIENT_ID", claims.Subject)
 
 				// uuid v4 like
-				utils.RequireTrue(tt, len(claims.ID) == 36)
+				requireTrue(tt, len(claims.ID) == 36)
 
-				utils.RequireTrue(tt, time.Now().Unix() < claims.ExpiresAt.Unix())
-				utils.RequireStringsEqual(tt, serverURL, claims.Audience[0])
+				requireTrue(tt, time.Now().Unix() < claims.ExpiresAt.Unix())
+				requireStringsEqual(tt, serverURL, claims.Audience[0])
 
 				w.Header().Set("Content-Type", "application/x-www-form-urlencoded")
 				_, err = w.Write([]byte("access_token=90d64460d14870c08c81352a05dedd3465940a7c&token_type=bearer"))
@@ -144,7 +143,7 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 			if err != nil {
 				tt.Error(err)
 			}
-			utils.ExpectAccessToken(tt, &oauth2.Token{
+			expectAccessToken(tt, &oauth2.Token{
 				AccessToken:  "90d64460d14870c08c81352a05dedd3465940a7c",
 				TokenType:    "bearer",
 				RefreshToken: "",
