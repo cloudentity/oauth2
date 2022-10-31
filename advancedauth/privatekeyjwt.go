@@ -12,6 +12,13 @@ import (
 
 const privateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
+type PrivateKeyAuth struct {
+	Key   string
+	KeyID string
+	Alg   Algorithm
+	Exp   time.Duration
+}
+
 func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 	var (
 		err       error

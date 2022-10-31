@@ -102,7 +102,7 @@ func (c *tokenSource) Token() (*oauth2.Token, error) {
 	// not client_secret nor auto_detect
 	if c.conf.AuthStyle > 2 {
 		var err error
-		if v, err = advancedauth.UrlValuesFromConfig(v, advancedauth.Config{
+		if err = advancedauth.ExtendUrlValues(v, advancedauth.Config{
 			AuthStyle:      c.conf.AuthStyle,
 			ClientID:       c.conf.ClientID,
 			PrivateKeyAuth: c.conf.PrivateKeyAuth,

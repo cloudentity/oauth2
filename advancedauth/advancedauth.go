@@ -2,7 +2,6 @@ package advancedauth
 
 import (
 	"net/url"
-	"time"
 
 	"github.com/cloudentity/oauth2"
 )
@@ -19,13 +18,6 @@ const (
 	ES512 Algorithm = "ES512"
 )
 
-type PrivateKeyAuth struct {
-	Key   string
-	KeyID string
-	Alg   Algorithm
-	Exp   time.Duration
-}
-
 type Config struct {
 	AuthStyle      oauth2.AuthStyle
 	ClientID       string
@@ -33,12 +25,12 @@ type Config struct {
 	TokenURL       string
 }
 
-func UrlValuesFromConfig(v url.Values, c Config) (url.Values, error) {
+func ExtendUrlValues(v url.Values, c Config) error {
 	if c.AuthStyle == oauth2.AuthStylePrivateKeyJWT {
 		var err error
 		jwtVals, err := privateKeyJWTAssertionVals(c)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		for key, vals := range jwtVals {
 			for _, val := range vals {
@@ -46,5 +38,5 @@ func UrlValuesFromConfig(v url.Values, c Config) (url.Values, error) {
 			}
 		}
 	}
-	return v, nil
+	return nil
 }
