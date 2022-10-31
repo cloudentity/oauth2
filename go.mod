@@ -3,7 +3,7 @@ module github.com/cloudentity/oauth2
 go 1.17
 
 require (
-	cloud.google.com/go/compute v1.7.0
+	cloud.google.com/go/compute/metadata v0.2.0
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/go-cmp v0.5.8
 	github.com/google/uuid v1.1.2
