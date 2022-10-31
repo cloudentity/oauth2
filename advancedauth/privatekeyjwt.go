@@ -13,9 +13,9 @@ import (
 const privateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
 type PrivateKeyAuth struct {
-	Key string
-	Alg Algorithm
-	Exp time.Duration
+	Key       string
+	Algorithm Algorithm
+	Exp       time.Duration
 }
 
 func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
@@ -47,7 +47,7 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(exp)),
 	}
 
-	alg = c.PrivateKeyAuth.Alg
+	alg = c.PrivateKeyAuth.Algorithm
 	if alg == "" {
 		alg = RS256
 	}

@@ -83,8 +83,8 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 				ClientID:  "CLIENT_ID",
 				AuthStyle: oauth2.AuthStylePrivateKeyJWT,
 				PrivateKeyAuth: advancedauth.PrivateKeyAuth{
-					Key: privateECDSAKey,
-					Alg: "ES256",
+					Key:       privateECDSAKey,
+					Algorithm: "ES256",
 				},
 				Scopes:         []string{"scope1", "scope2"},
 				EndpointParams: url.Values{"audience": {"audience1"}},
