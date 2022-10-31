@@ -55,14 +55,11 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 
 	switch alg {
 	case RS256, RS384, RS512:
-		key, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key))
-		if err != nil {
+		if key, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key)); err != nil {
 			return url.Values{}, fmt.Errorf("could not parse private key from PEM %s", alg)
 		}
 	case ES256, ES384, ES512:
-		key, err = jwt.ParseECPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key))
-		if err != nil {
-
+		if key, err = jwt.ParseECPrivateKeyFromPEM([]byte(c.PrivateKeyAuth.Key)); err != nil {
 			return url.Values{}, fmt.Errorf("could not parse private key from PEM %s", alg)
 		}
 	default:
@@ -71,9 +68,7 @@ func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
 
 	token = jwt.NewWithClaims(jwt.GetSigningMethod(string(alg)), claims)
 
-	assertion, err = token.SignedString(key)
-	if err != nil {
-
+	if assertion, err = token.SignedString(key); err != nil {
 		return url.Values{}, err
 	}
 

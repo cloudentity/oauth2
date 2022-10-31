@@ -27,11 +27,11 @@ type Config struct {
 
 func ExtendUrlValues(v url.Values, c Config) error {
 	if c.AuthStyle == oauth2.AuthStylePrivateKeyJWT {
-		var err error
 		jwtVals, err := privateKeyJWTAssertionVals(c)
 		if err != nil {
 			return err
 		}
+
 		for key, vals := range jwtVals {
 			for _, val := range vals {
 				v.Set(key, val)
