@@ -13,9 +13,12 @@ import (
 const privateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
 type PrivateKeyAuth struct {
-	Key       string
+	// Key is a PEM formatted private key used to sign client_assertion
+	Key string
+	// Algorithm used to sign the client_assertion (see JWS) - default RS256
 	Algorithm Algorithm
-	Exp       time.Duration
+	// Exp defines how long client_assertion is valid for - default 30 seconds
+	Exp time.Duration
 }
 
 func privateKeyJWTAssertionVals(c Config) (url.Values, error) {
