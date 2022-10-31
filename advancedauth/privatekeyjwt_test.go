@@ -105,6 +105,7 @@ func TestPrivateKeyJWT_ClientCredentials(t *testing.T) {
 				expectFormParam(tt, r, "client_id", "")
 				expectFormParam(tt, r, "client_secret", "")
 				expectFormParam(tt, r, "grant_type", "client_credentials")
+				expectFormParam(tt, r, "scope", "scope1 scope2")
 				expectFormParam(tt, r, "client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
 
 				assertion := r.FormValue("client_assertion")
