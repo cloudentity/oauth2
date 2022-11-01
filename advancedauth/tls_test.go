@@ -141,3 +141,114 @@ func TestTLS_ClientCredentials(t *testing.T) {
 	}
 
 }
+
+type fakeRoundTripper struct{}
+
+func (f *fakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	return nil, nil
+}
+
+func TestExtendContext(t *testing.T) {
+
+	tcs := []struct {
+		title           string
+		ctx             context.Context
+		errorExpected   bool
+		auth            advancedauth.TLSAuth
+		assertTransport func(ttt *testing.T, t *http.Transport)
+	}{
+		{
+			title:         "background context",
+			ctx:           context.Background(),
+			errorExpected: false,
+			auth: advancedauth.TLSAuth{
+				Key:         key,
+				Certificate: cert,
+			},
+		},
+		{
+			title:         "invalid cert",
+			ctx:           context.Background(),
+			errorExpected: true,
+			auth: advancedauth.TLSAuth{
+				Key:         key,
+				Certificate: "random",
+			},
+		},
+		{
+			title:         "non *http.Client client",
+			ctx:           context.WithValue(context.Background(), oauth2.HTTPClient, struct{}{}),
+			errorExpected: true,
+			auth: advancedauth.TLSAuth{
+				Key:         key,
+				Certificate: cert,
+			},
+		},
+		{
+			title: "non *http.Transport transport",
+			ctx: context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{
+				Transport: &fakeRoundTripper{},
+			}),
+			errorExpected: true,
+			auth: advancedauth.TLSAuth{
+				Key:         key,
+				Certificate: cert,
+			},
+		},
+		{
+			title:         "no transport configured",
+			ctx:           context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{}),
+			errorExpected: false,
+			auth: advancedauth.TLSAuth{
+				Key:         key,
+				Certificate: cert,
+			},
+		},
+		{
+			title: "configured transport",
+			ctx: context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{
+				Transport: &http.Transport{
+					IdleConnTimeout: 10 * time.Second,
+				},
+			}),
+			errorExpected: false,
+			auth: advancedauth.TLSAuth{
+				Key:         key,
+				Certificate: cert,
+			},
+			assertTransport: func(ttt *testing.T, tr *http.Transport) {
+				expectTrue(ttt, tr.IdleConnTimeout == 10*time.Second)
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		tc := tc
+		t.Run(tc.title, func(tt *testing.T) {
+			config := advancedauth.Config{
+				AuthStyle: oauth2.AuthStyleTLS,
+				ClientID:  "random",
+				TLSAuth:   tc.auth,
+				TokenURL:  "random",
+			}
+			ctx, err := advancedauth.ExtendContext(tc.ctx, config)
+			if tc.errorExpected && err == nil {
+				tt.Errorf("expected error")
+			} else if !tc.errorExpected && err != nil {
+				tt.Fatalf("unexpected error %+v", err)
+			} else if !tc.errorExpected && err == nil {
+				c := ctx.Value(oauth2.HTTPClient)
+				expectTrue(tt, c != nil)
+				hc, ok := ctx.Value(oauth2.HTTPClient).(*http.Client)
+				expectTrue(tt, ok)
+				tr, ok := hc.Transport.(*http.Transport)
+				expectTrue(tt, ok)
+				certs := tr.TLSClientConfig.Certificates
+				expectTrue(tt, len(certs) == 1)
+				if tc.assertTransport != nil {
+					tc.assertTransport(tt, tr)
+				}
+			}
+		})
+	}
+}

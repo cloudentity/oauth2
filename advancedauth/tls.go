@@ -3,6 +3,7 @@ package advancedauth
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net/http"
 
 	"github.com/cloudentity/oauth2"
@@ -27,16 +28,20 @@ func extendContextWithTLSClient(ctx context.Context, c Config) (context.Context,
 		ctx = context.Background()
 	}
 
-	if hc, ok = ctx.Value(oauth2.HTTPClient).(*http.Client); !ok {
+	if ctx.Value(oauth2.HTTPClient) == nil {
 		hc = http.DefaultClient
+	} else if hc, ok = ctx.Value(oauth2.HTTPClient).(*http.Client); !ok {
+		return nil, errors.New("client of type *http.Client required in context")
 	}
 
 	if cert, err = tls.X509KeyPair([]byte(c.TLSAuth.Certificate), []byte(c.TLSAuth.Key)); err != nil {
 		return nil, err
 	}
 
-	if tr, ok = hc.Transport.(*http.Transport); !ok {
+	if hc.Transport == nil {
 		tr = &http.Transport{}
+	} else if tr, ok = hc.Transport.(*http.Transport); !ok {
+		return nil, errors.New("transport of type *http.Transport required in context")
 	}
 	if tr.TLSClientConfig == nil {
 		tr.TLSClientConfig = &tls.Config{}
