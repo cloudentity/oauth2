@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 	"time"
 
@@ -78,8 +77,7 @@ func TestTLS_ClientCredentials(t *testing.T) {
 					Key:         key,
 					Certificate: cert,
 				},
-				Scopes:         []string{"scope1", "scope2"},
-				EndpointParams: url.Values{"audience": {"audience1"}},
+				Scopes: []string{"scope1", "scope2"},
 			},
 		},
 	}
