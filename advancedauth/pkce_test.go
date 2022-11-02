@@ -30,6 +30,16 @@ func TestPKCE_AuthorizationCodeFlow(t *testing.T) {
 				Scopes: []string{"scope1", "scope2"},
 			},
 		},
+		{
+			title: "pkce without client auth",
+			config: oauth2.Config{
+				ClientID: "CLIENT_ID",
+				Endpoint: oauth2.Endpoint{
+					AuthStyle: oauth2.AuthStyleInParams,
+				},
+				Scopes: []string{"scope1", "scope2"},
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -42,7 +52,9 @@ func TestPKCE_AuthorizationCodeFlow(t *testing.T) {
 				expectURL(tt, r, "/token")
 				expectHeader(tt, r, "Content-Type", "application/x-www-form-urlencoded")
 				expectFormParam(tt, r, "client_id", "CLIENT_ID")
-				expectFormParam(tt, r, "client_secret", "CLIENT_SECRET")
+				if tc.config.ClientSecret != "" {
+					expectFormParam(tt, r, "client_secret", "CLIENT_SECRET")
+				}
 				expectFormParam(tt, r, "code", "exchange-code")
 				expectFormParam(tt, r, "grant_type", "authorization_code")
 				expectFormParam(tt, r, "code_verifier", p.Verifier)
