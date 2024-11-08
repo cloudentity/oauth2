@@ -37,6 +37,21 @@ type Credentials struct {
 	// environment and not with a credentials file, e.g. when code is
 	// running on Google Cloud Platform.
 	JSON []byte
+
+	// UniverseDomainProvider returns the default service domain for a given
+	// Cloud universe. Optional.
+	//
+	// On GCE, UniverseDomainProvider should return the universe domain value
+	// from Google Compute Engine (GCE)'s metadata server. See also [The attached service
+	// account](https://cloud.google.com/docs/authentication/application-default-credentials#attached-sa).
+	// If the GCE metadata server returns a 404 error, the default universe
+	// domain value should be returned. If the GCE metadata server returns an
+	// error other than 404, the error should be returned.
+	UniverseDomainProvider func() (string, error)
+}
+
+func (c *Credentials) GetUniverseDomain() (string, error) {
+	return "", nil
 }
 
 // DefaultCredentials is the old name of Credentials.
