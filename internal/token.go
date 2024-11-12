@@ -324,8 +324,11 @@ func doTokenRoundTrip(ctx context.Context, req *http.Request) (*Token, error) {
 }
 
 type RetrieveError struct {
-	Response *http.Response
-	Body     []byte
+	Response         *http.Response
+	Body             []byte
+	ErrorCode        string
+	ErrorDescription string
+	ErrorURI         string
 }
 
 func (r *RetrieveError) Error() string {

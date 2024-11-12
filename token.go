@@ -181,6 +181,12 @@ type RetrieveError struct {
 	// Body is the body that was consumed by reading Response.Body.
 	// It may be truncated.
 	Body []byte
+	// ErrorCode is RFC 6749's 'error' parameter.
+	ErrorCode string
+	// ErrorDescription is RFC 6749's 'error_description' parameter.
+	ErrorDescription string
+	// ErrorURI is RFC 6749's 'error_uri' parameter.
+	ErrorURI string
 }
 
 func (r *RetrieveError) Error() string {
