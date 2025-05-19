@@ -12,6 +12,10 @@ import (
 
 const privateKeyJWTAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
+func init() {
+	jwt.MarshalSingleStringAsArray = false
+}
+
 type PrivateKeyAuth struct {
 	// Key is a PEM formatted private key used to sign client_assertion
 	Key string
